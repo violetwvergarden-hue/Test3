@@ -25,20 +25,11 @@ jobs:
 
       - name: 4. Prepare Android SDK & Build APK
         run: |
-          if [ -z "$ANDROID_HOME" ] || [ ! -d "$ANDROID_HOME" ]; then
-            export ANDROID_HOME="$HOME/android-sdk"
-            mkdir -p "$ANDROID_HOME/cmdline-tools"
-            curl -sSL https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -o /tmp/tools.zip
-            python3 -c 'import zipfile; zipfile.ZipFile("/tmp/tools.zip").extractall("/tmp/cmdtools")'
-            mv /tmp/cmdtools/cmdline-tools "$ANDROID_HOME/cmdline-tools/latest"
-            chmod -R +x "$ANDROID_HOME/cmdline-tools/latest/bin"
-          fi
+          sudo chown -R $USER:$USER "$ANDROID_HOME" || true
           echo "sdk.dir=$ANDROID_HOME" > local.properties
-          SDKMANAGER=$(find "$ANDROID_HOME" -name sdkmanager | head -n 1)
+          SDKMANAGER=$(find "$ANDROID_HOME" -name sdkmanager 2>/dev/null | head -n 1)
           if [ -n "$SDKMANAGER" ]; then
-            chmod +x "$SDKMANAGER"
             (yes || true) | "$SDKMANAGER" --sdk_root="$ANDROID_HOME" --licenses > /dev/null 2>&1 || true
-            "$SDKMANAGER" --sdk_root="$ANDROID_HOME" "platform-tools" "platforms;android-34" "build-tools;34.0.0"
           fi
           curl -sSL https://services.gradle.org/distributions/gradle-8.6-bin.zip -o /tmp/gradle.zip
           python3 -c 'import zipfile; zipfile.ZipFile("/tmp/gradle.zip").extractall("/tmp")'
