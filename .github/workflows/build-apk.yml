@@ -14,17 +14,18 @@ jobs:
 
       - name: 2. Extract ZIP Project
         run: |
-          python3 -c 'import glob, zipfile; [zipfile.ZipFile(z).extractall(".") for z in glob.glob("*.zip")]'
           ls -la
+          python3 -c 'import os, shutil, zipfile; [zipfile.ZipFile(os.path.join(r, f)).extractall(".") for r, d, fl in os.walk(".") if ".git" not in r for f in fl if zipfile.is_zipfile(os.path.join(r, f))]; sub = next((r for r, d, fl in os.walk(".") if "settings.gradle" in fl and r != "."), None); [shutil.move(os.path.join(sub, x), x) for x in (os.listdir(sub) if sub else [])]'
+          ls -la
+          test -f settings.gradle
 
-      - name: 3. Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-
-      - name: 4. Prepare Android SDK & Build APK
+      - name: 3. Prepare Android SDK & Build APK
         run: |
+          if [ -n "$JAVA_HOME_17_X64" ]; then
+            export JAVA_HOME="$JAVA_HOME_17_X64"
+            export PATH="$JAVA_HOME/bin:$PATH"
+          fi
+          java -version
           sudo chown -R $USER:$USER "$ANDROID_HOME" || true
           echo "sdk.dir=$ANDROID_HOME" > local.properties
           SDKMANAGER=$(find "$ANDROID_HOME" -name sdkmanager 2>/dev/null | head -n 1)
@@ -36,7 +37,7 @@ jobs:
           chmod +x /tmp/gradle-8.6/bin/gradle
           /tmp/gradle-8.6/bin/gradle assembleDebug --no-daemon --stacktrace
 
-      - name: 5. Upload Compiled APK
+      - name: 4. Upload Compiled APK
         uses: actions/upload-artifact@v4
         with:
           name: MangaScreenTranslator-APK
